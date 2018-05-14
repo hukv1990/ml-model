@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # In[4]:
@@ -22,8 +23,7 @@ LOG_DIR = './logs/dev'
 
 def evaluate():
     with tf.Graph().as_default():
-        images, labels = mnist.inputs(['./mnist_data/mnist_dev.tfrecord'],
-                                      NUM_EXAMPLES_PER_EPOCH_FOR_DEV)
+        images, labels = mnist.inputs(['./mnist_data/mnist_dev.tfrecord'], NUM_EXAMPLES_PER_EPOCH_FOR_DEV)
         logits = mnist.inference(images, is_train=False)
 
         loss = mnist.loss(logits, labels)
@@ -31,7 +31,7 @@ def evaluate():
         top_k_op = tf.nn.in_top_k(logits, labels, 1)
         accuracy = tf.reduce_mean(tf.cast(top_k_op, tf.float32))
         tf.summary.scalar('acc', accuracy)
-
+        
         variable_averages = tf.train.ExponentialMovingAverage(mnist.MOVING_AVERAGE_DECAY)
         variable_to_restore = variable_averages.variables_to_restore()
 
@@ -58,9 +58,9 @@ def evaluate():
                         _str_format += ': After {0} training step(s), dev accuracy = {1:.4f}'
                         print(_str_format.format(global_step, dev_acc))
 
-                    else :
-                        print(time.strftime("%Y-%m-%d %H:%M:%S") + " ： No check point file found")
-                        time.sleep(EVAL_INTERVAL_SECS)
+                else :
+                    print(time.strftime("%Y-%m-%d %H:%M:%S") + " ： No check point file found")
+                time.sleep(EVAL_INTERVAL_SECS)
             coord.request_stop()
             coord.join()
 
@@ -98,10 +98,10 @@ def main(argv=None):
     import cv2
     _path = r"E:\MachineVision\ml\LeNet\self_test\output"
     for i in range(10):
-       file_path = os.path.join(_path, "{0}.bmp".format(i))
-       img = cv2.imread(file_path, 0)
-       ret = predict(img)
-       print("i = {0}, ret = {1}".format(i, ret))
+        file_path = os.path.join(_path, "{0}.bmp".format(i))
+        img = cv2.imread(file_path, 0)
+        ret = predict(img)
+        print("i = {0}, ret = {1}".format(i, ret))
     '''
 
 # In[9]:

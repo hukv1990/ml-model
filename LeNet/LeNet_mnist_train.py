@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # In[1]:
@@ -40,7 +41,7 @@ def train(num_epochs=10000):
 
         with tf.Session() as sess:
             writer = tf.summary.FileWriter(LOG_DIR, sess.graph)
-            sess.run(init_op)
+            sess.run(init_op)     
             coord = tf.train.Coordinator()
             threads = tf.train.start_queue_runners(sess=sess, coord=coord)
             for step in range(num_epochs):
@@ -105,3 +106,4 @@ def main(argv=None):
 
 if __name__ == '__main__':
     tf.app.run(main=main)
+

@@ -156,6 +156,7 @@ def distorted_inputs(data_dir, batch_size):
       raise ValueError('Failed to find file: ' + f)
 
   # Create a queue that produces the filenames to read.
+  # 根据文件列表，创建读取队列
   filename_queue = tf.train.string_input_producer(filenames)
 
   # Read examples from files in the filename queue.

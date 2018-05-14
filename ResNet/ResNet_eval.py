@@ -1,99 +1,108 @@
-#!/opt/conda/bin/python
 #coding=utf-8
 
 import tensorflow as tf
-import numpy as np
-from ResNet_pruning import ResNetPruning
+from ResNet_purning import ResNetPurning
 import time
-import matplotlib.pyplot as plt
+import numpy as np
+import math
+from tqdm import trange
 
-
-class ResNetEval(ResNetPruning):
-    def __init__(self, log_dir_dev='./logs/dev',
-                 log_dir_train='./logs/train',
+class ResNetEval(ResNetPurning):
+    def __init__(self, batch_size=32,
+                 train_log_dir = './logs/train',
+                 dev_log_dir = './logs/dev',
                  model_dir = './model'):
-        ResNetPruning.__init__(self)
-        self.LOG_DIR_DEV = log_dir_dev
-        self.LOG_DIR_TRAIN = log_dir_train
-        self.MODEL_DIR = model_dir
-        self.EVAL_INTERVAL_SECS = 2
+        super(ResNetEval, self).__init__(training=False, batch_size=batch_size)
 
-    def eval_once(self, ckpt, saver, writer, accuracy_op, summary_op, loss_op, X, Y):
-        images, labels = self.inputs(eval_data=True)
-        labels = labels.reshape(labels.shape[0])
+        self.train_log_dir = train_log_dir
+        self.dev_log_dir = dev_log_dir
+        self.model_dir = model_dir
+        self.eval_inter_secs = 2
+        self.graph = tf.Graph()
 
-        with tf.Session() as sess:
-            saver.restore(sess, ckpt.model_checkpoint_path)
+        # model graph
+        with self.graph.as_default():
+            self.model()
 
-            global_step = ckpt.model_checkpoint_path.split('-')[-1]
-            _accuracy, _loss, _summary = sess.run([accuracy_op, loss_op, summary_op],
-            feed_dict={X:images, Y:labels})
-
-            writer.add_summary(_summary, global_step)
-            print('step = {0}, dev loss = {1:.4e}, dev accuracy = {2:.4f}'.format(global_step, _loss, _accuracy))
-
-    def __call__(self):
-        X, Y = self.create_placeholder()
-        logits = self.inference(X, training=False)
-        loss_op = self.loss(logits, Y)
-        accuracy_op = self.accuracy(logits, Y)
+    def model(self):
+        self.X, self.Y = self.create_placeholder()
+        self.logits = self.build_resnet_18(self.X)
+        self.loss = self.calc_loss(logits=self.logits, labels=self.Y)
+        self.accuracy_op = self.accuracy(self.logits, self.Y)
 
         variable_averages = tf.train.ExponentialMovingAverage(self.MOVING_AVERAGE_DECAY)
         variable_to_restore = variable_averages.variables_to_restore()
-        # saver = tf.train.Saver(variable_to_restore)
-        saver = tf.train.Saver()
 
-        summary_op = tf.summary.merge_all()
-        dev_writer = tf.summary.FileWriter(self.LOG_DIR_DEV)
-        # train_writer = tf.summary.FileWriter(self.LOG_DIR_TRAIN)
+        self.saver = tf.train.Saver(variable_to_restore)
+        self.summary_op = tf.summary.merge_all()
+        self.dev_writer = tf.summary.FileWriter(self.dev_log_dir)
+        self.train_writer = tf.summary.FileWriter(self.train_log_dir)
+        self.dev_images, self.dev_labels = self.cifar10.inputs(eval_data='dev')
+        self.train_images, self.train_labels = self.cifar10.inputs(eval_data='test')
 
+    def eval_once(self, sess, global_step, eval_data='dev'):
+        if eval_data == 'dev':
+            n_times = int(math.floor(self.cifar10.num_examples_per_epoch_for_dev / self.cifar10.batch_size))
+            images = self.dev_images
+            labels = self.dev_labels
+        else:
+            n_times = int(math.floor(self.cifar10.num_examples_per_epoch_for_train / self.cifar10.batch_size))
+            images = self.train_images
+            labels = self.train_labels
+        # print('n_times = ', n_times)
+        loss_list = []
+        acc_list = []
+        # n_times = 1
+
+        for i in range(n_times):
+            x_batch, y_batch = sess.run([images, labels])
+            _accuracy, _loss = sess.run([self.accuracy_op, self.loss],
+                                        feed_dict={self.X: x_batch, self.Y: y_batch})
+            acc_list.append(_accuracy)
+            loss_list.append(_loss)
+
+        _accuracy = np.sum(acc_list) / n_times
+        _loss = np.sum(loss_list) / n_times
+        summary = tf.Summary()
+        summary.value.add(tag='accuracy', simple_value=_accuracy)
+        if eval_data == 'dev':
+            summary.value.add(tag='losses', simple_value=_loss)
+            self.dev_writer.add_summary(summary, global_step)
+        else:
+            self.train_writer.add_summary(summary, global_step)
+        print('step = {0}, {1} loss = {2:.4e}, {1} accuracy = {3:.4f}'.format(global_step, eval_data, _loss, _accuracy))
+
+
+    def start_eval(self):
         _former_ckpt = None
-        while True:
-            ckpt = tf.train.get_checkpoint_state(self.MODEL_DIR)
-            if not (ckpt and ckpt.model_checkpoint_path):
-                print('No checkpoint file found.')
-                time.sleep(self.EVAL_INTERVAL_SECS)
-                continue
-
-            if _former_ckpt == ckpt.model_checkpoint_path:
-                time.sleep(self.EVAL_INTERVAL_SECS)
-                continue
-
-            _former_ckpt = ckpt.model_checkpoint_path
-            self.eval_once(ckpt, saver, dev_writer, accuracy_op, summary_op, loss_op, X, Y)
-
-            def predict(self):
-                images, labels = self.inputs(eval_data=True)
-                _ = np.random.randint(0, len(images))
-
-                _image, _label = images[_], labels[_]
-                print('random num = {0}, label = {1}'.format(_, _label))
-                plt.imshow(_image),plt.show()
-                _image = _image.reshape(-1, 64,64,3)
-
-                X, y = self.create_placeholder()
-                logits = self.inference(X, training=False)
-                predict = tf.argmax(logits, 1)
-
-                variable_averages = tf.train.ExponentialMovingAverage(self.MOVING_AVERAGE_DECAY)
-                variable_to_restore = variable_averages.variables_to_restore()
-                saver = tf.train.Saver(variable_to_restore)
-
-                ckpt = tf.train.get_checkpoint_state(self.MODEL_DIR)
+        with self.graph.as_default():
+            while True:
+                ckpt = tf.train.get_checkpoint_state(self.model_dir)
                 if not (ckpt and ckpt.model_checkpoint_path):
                     print('No checkpoint file found.')
-                    return
+                    time.sleep(self.eval_inter_secs)
+                    continue
 
-                with tf.Session() as sess:
-                    saver.restore(sess, ckpt.model_checkpoint_path)
-                    _predict = sess.run(predict, feed_dict={X:_image, y:_label})
-                    print('predict = ', _predict)
+                if _former_ckpt == ckpt.model_checkpoint_path:
+                    time.sleep(self.eval_inter_secs)
+                    continue
+
+                _former_ckpt = ckpt.model_checkpoint_path
+                with tf.Session(config=self.config) as sess:
+                    coord = tf.train.Coordinator()
+                    threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+                    self.saver.restore(sess, ckpt.model_checkpoint_path)
+                    global_step = ckpt.model_checkpoint_path.split('-')[-1]
+
+                    self.eval_once(sess, global_step, eval_data='dev')
+                    self.eval_once(sess, global_step, eval_data='test')
+
+                    coord.request_stop()
+                    coord.join()
 
 def main(argv=None):
-    ResNetEval()()
+    resnet_eval = ResNetEval()
+    resnet_eval.start_eval()
 
 if __name__ == '__main__':
     tf.app.run(main=main, argv=None)
-
-    # resnet = ResNetEval()
-    # resnet.predict()

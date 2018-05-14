@@ -1,3 +1,4 @@
+
 # coding: utf-8
 
 # In[8]:
@@ -29,18 +30,18 @@ def _generate_image_and_label_batch(image, label, min_queue_examples, batch_size
     num_preprocess_threads = 16
     if shuffle:
         images, labels = tf.train.shuffle_batch(
-        [image, label],
-        batch_size=batch_size,
-        num_threads=num_preprocess_threads,
-        capacity=min_queue_examples + 3 * batch_size,
-        min_after_dequeue=min_queue_examples
+            [image, label],
+            batch_size=batch_size,
+            num_threads=num_preprocess_threads,
+            capacity=min_queue_examples + 3 * batch_size,
+            min_after_dequeue=min_queue_examples
         )
     else:
         images, labels = tf.train.batch(
-        [image, label],
-        batch_size=batch_size,
-        num_threads=num_preprocess_threads,
-        capacity=min_queue_examples + 3 * batch_size
+            [image, label],
+            batch_size=batch_size,
+            num_threads=num_preprocess_threads,
+            capacity=min_queue_examples + 3 * batch_size
         )
     return images, tf.reshape(labels, [batch_size])
 
@@ -53,19 +54,24 @@ def _input_batch(filenames, batch_size=BATCH_SIZE):
     reader = tf.TFRecordReader()
     _, serialized_example = reader.read(filename_queue)
     features = tf.parse_single_example(
-    serialized_example,
-    features={
-    'image' : tf.FixedLenFeature([], tf.string),
-    'label' : tf.FixedLenFeature([], tf.int64)
-    })
+        serialized_example,
+        features={
+            'image' : tf.FixedLenFeature([], tf.string),
+            'label' : tf.FixedLenFeature([], tf.int64)
+        })
     image = tf.cast(tf.decode_raw(features['image'], tf.uint8), tf.float32)
     label = tf.cast(features['label'], tf.int64)
     image = tf.divide(image, 255.0)
-
+    
     image.set_shape([784, ])
-    #     label.set_shape([])
+#     label.set_shape([])
     min_queue_examples = int(50000 * 0.4)
-    return _generate_image_and_label_batch(image,label,min_queue_examples,batch_size,shuffle=True)
+    return _generate_image_and_label_batch(
+        image, 
+        label, 
+        min_queue_examples, 
+        batch_size, 
+        shuffle=True)
 
 
 # In[21]:
@@ -85,15 +91,15 @@ def create_placeholder():
 
 
 def _get_layer_variable(shape, stddev=0.01):
-    w = tf.get_variable('w',
-                        shape=shape,
+    w = tf.get_variable('w', 
+                        shape=shape, 
                         dtype=tf.float32,
                         # initializer=tf.truncated_normal_initializer(stddev=stddev))
                         initializer=tf.glorot_normal_initializer(seed=1))
     b = tf.get_variable('b',
-                        shape=[shape[-1]],
-                        dtype=tf.float32,
-                        initializer=tf.constant_initializer(0.1))
+                       shape=[shape[-1]],
+                       dtype=tf.float32,
+                       initializer=tf.constant_initializer(0.1))
     return w, b
 
 
@@ -106,20 +112,20 @@ def inference(images, is_train=False):
         w, b = _get_layer_variable([5,5,1,32])
         Z1 = tf.nn.bias_add(tf.nn.conv2d(A0, w, strides=[1,1,1,1], padding='SAME'), b)
         A1 = tf.nn.relu(Z1)
-
+        
     pool1 = tf.nn.max_pool(A1, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME', name='pool1')
-
+    
     with tf.variable_scope('conv2'):
         w, b = _get_layer_variable([5,5,32,64])
         Z2 = tf.nn.bias_add(tf.nn.conv2d(pool1, w, strides=[1,1,1,1], padding='SAME'), b)
         A2 = tf.nn.relu(Z2)
-
+    
     pool2 = tf.nn.max_pool(A2, ksize=[1,2,2,1], strides=[1,2,2,1], padding='SAME', name='pool2')
 
     pool_shape = pool2.get_shape().as_list()
     nodes = pool_shape[1] * pool_shape[2] * pool_shape[3]
     A_fc0 = tf.reshape(pool2, [-1, nodes])
-
+    
     with tf.variable_scope('fc1'):
         w, b = _get_layer_variable([nodes, 512])
         Z_fc1 = tf.matmul(A_fc0, w) + b
@@ -159,14 +165,15 @@ def loss(logits, labels):
 
 
 def train(loss, global_step):
-
+    
     num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / BATCH_SIZE
     decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
-    lr = tf.train.exponential_decay(learning_rate=INITIAL_LEARNING_RATE,
-                                    global_step=global_step,
-                                    decay_steps=decay_steps,
-                                    decay_rate=LEARNING_RATE_DECAY_FACTOR,
-                                    staircase=True)
+    lr = tf.train.exponential_decay(
+        learning_rate=INITIAL_LEARNING_RATE,
+        global_step=global_step,
+        decay_steps=decay_steps,
+        decay_rate=LEARNING_RATE_DECAY_FACTOR,
+        staircase=True)
     tf.summary.scalar('learning_rate', lr)
     # gradient_op = tf.train.GradientDescentOptimizer(lr).minimize(loss, global_step=global_step)
     # gradient_op = tf.train.AdagradOptimizer(lr).minimize(loss, global_step=global_step)
@@ -189,19 +196,19 @@ def _mnist_to_tfrecord(mnist_path):
         images = data.images
         labels = data.labels
         num_examples = data.num_examples
-
+        
         writer = tf.python_io.TFRecordWriter(filename)
         for index in range(num_examples):
             image_raw = images[index].tostring()
             example = tf.train.Example(features=tf.train.Features(feature={
-            'image' : tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_raw])),
-            'label' : tf.train.Feature(int64_list=tf.train.Int64List(value=[labels[index]]))
+                'image' : tf.train.Feature(bytes_list=tf.train.BytesList(value=[image_raw])),
+                'label' : tf.train.Feature(int64_list=tf.train.Int64List(value=[labels[index]]))
             }))
-        writer.write(example.SerializeToString())
+            writer.write(example.SerializeToString())
         writer.close()
-    save_tfrecord(mnist.train, os.path.join(mnist_path, 'mnist_train.tfrecord'))
-    save_tfrecord(mnist.validation, os.path.join(mnist_path, 'mnist_dev.tfrecord'))
-    save_tfrecord(mnist.test, os.path.join(mnist_path, 'mnist_test.tfrecord'))
+    save_tfrecord(mnist.train, os.path.join(mnist_path, 'mnist_train.tfrecord'))   
+    save_tfrecord(mnist.validation, os.path.join(mnist_path, 'mnist_dev.tfrecord'))   
+    save_tfrecord(mnist.test, os.path.join(mnist_path, 'mnist_test.tfrecord'))   
 
 
 # In[18]:
@@ -214,3 +221,4 @@ if __name__ == '__main__':
     # img = mnist.train.images[0]
     # print(img.max(), img.min())
     # plt.imshow(img.reshape((28,28)), 'gray'), plt.show()
+
