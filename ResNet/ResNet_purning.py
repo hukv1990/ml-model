@@ -16,13 +16,15 @@ class ResNetPurning(object):
         self.MOVING_AVERAGE_DECAY = 0.999
         self.NUM_EPOCHS_PER_DECAY = 5.0
         self.LEARNING_RATE_DECAY_FACTOR = 0.6
-        self.INITIAL_LEARNING_RATE = 1e-3
+        self.INITIAL_LEARNING_RATE = 1e-1
 
         self.TF_VERSION = tf.__version__
         print('self.TF_VERSION = ', self.TF_VERSION)
 
-        self.config = tf.ConfigProto()
-        self.config.gpu_options.per_process_gpu_memory_fraction = 0.9
+        self.config = tf.ConfigProto(
+            device_count={"CPU": 8}, # limit to num_cpu_core CPU usage
+            inter_op_parallelism_threads = 2,
+            intra_op_parallelism_threads = 10)
 
         # be True only in training
         self.training = training
@@ -293,7 +295,7 @@ class ResNetPurning(object):
         #     decay_steps=decay_steps,
         #     decay_rate=self.LEARNING_RATE_DECAY_FACTOR,
         #     staircase=True)
-        lr = tf.constant(1e-3)
+        lr = tf.constant(self.INITIAL_LEARNING_RATE)
         tf.summary.scalar('learning rate', lr)
         # lr = tf.maximum(lr, 1e-6)
 

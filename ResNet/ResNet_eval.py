@@ -5,7 +5,7 @@ from ResNet_purning import ResNetPurning
 import time
 import numpy as np
 import math
-from tqdm import trange
+# from tqdm import trange
 
 class ResNetEval(ResNetPurning):
     def __init__(self, batch_size=32,
