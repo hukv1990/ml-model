@@ -53,7 +53,7 @@ class ResNetTrain(ResNetPurning):
                 _ = sess.run([self.train_op], feed_dict={self.X: x_batch, self.Y: y_batch})
                 duration = time.time() - start_time
 
-                if step % 10 == 0:
+                if step % 100 == 0:
                     summary, loss_val = sess.run([self.summary_op, self.loss],
                                                  feed_dict={self.X: x_batch, self.Y: y_batch})
                     self.train_writer.add_summary(summary, global_step=step)
@@ -78,7 +78,7 @@ def main(argv=None):
     argv = parse.parse_args()
 
     if argv.num == None:
-        argv.num = 10000
+        argv.num = 50000
 
     resnet_train = ResNetTrain()
     resnet_train.start_train(argv.num, restore=argv.restore)

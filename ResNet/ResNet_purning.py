@@ -15,16 +15,18 @@ class ResNetPurning(object):
 
         self.MOVING_AVERAGE_DECAY = 0.999
         self.NUM_EPOCHS_PER_DECAY = 5.0
-        self.LEARNING_RATE_DECAY_FACTOR = 0.6
+        self.LEARNING_RATE_DECAY_FACTOR = 0.5
         self.INITIAL_LEARNING_RATE = 1e-1
 
         self.TF_VERSION = tf.__version__
         print('self.TF_VERSION = ', self.TF_VERSION)
 
-        self.config = tf.ConfigProto(
-            device_count={"CPU": 8}, # limit to num_cpu_core CPU usage
-            inter_op_parallelism_threads = 2,
-            intra_op_parallelism_threads = 10)
+        # self.config = tf.ConfigProto(
+        #     device_count={"CPU": 8}, # limit to num_cpu_core CPU usage
+        #     inter_op_parallelism_threads = 2,
+        #     intra_op_parallelism_threads = 10)
+        self.config = tf.ConfigProto()
+        self.config.gpu_options.allow_growth = True
 
         # be True only in training
         self.training = training
@@ -303,8 +305,8 @@ class ResNetPurning(object):
         with tf.name_scope('optimizer'):
             update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
             with tf.control_dependencies(update_ops):
-                optimizer = tf.train.GradientDescentOptimizer(lr)
-                # optimizer = tf.train.AdamOptimizer(lr)
+                # optimizer = tf.train.GradientDescentOptimizer(lr)
+                optimizer = tf.train.AdamOptimizer()
                 # optimizer = tf.train.RMSPropOptimizer(lr)
                 optimizer_op = optimizer.minimize(loss, global_step=global_step)
 
