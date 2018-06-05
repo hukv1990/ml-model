@@ -24,7 +24,6 @@ class MobileNet(object):
                  input_shape=None,
                  alpha=1.0,
                  depth_multipliter=1,
-                 dropout=1e-3,
                  include_top=True,
                  weights='imagenet',
                  input_tensor=None,
@@ -33,7 +32,6 @@ class MobileNet(object):
         self.input_shape = input_shape
         self.alpha = alpha
         self.depth_multipliter = depth_multipliter
-        self.dropout = dropout
         self.include_top = include_top
         self.weights = weights
         self.input_tensor = input_tensor
@@ -60,6 +58,7 @@ class MobileNet(object):
                        padding='valid',
                        use_bias=False,
                        strides=strides,
+                       kernel_initializer='he_normal',
                        name='conv1')(x)
             x = BatchNormalization(axis=-1, name='conv1_bn')(x)
             return Activation(self.relu6, name='conv1_relu')(x)
@@ -77,6 +76,7 @@ class MobileNet(object):
                                 depth_multiplier=self.depth_multipliter,
                                 strides=strides,
                                 use_bias=False,
+                                depthwise_initializer='he_normal',
                                 name='conv_dw_%d' % block_id)(x)
             x = BatchNormalization(axis=channel_axis, name='conv_dw_%d_bn' % block_id)(x)
             x = Activation(self.relu6, name='conv_dw_%d_relu' % block_id)(x)
