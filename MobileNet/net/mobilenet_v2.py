@@ -114,6 +114,46 @@ class MobileNetV2(object):
             return x
         return func
 
+    def build_net_mnist(self):
+
+        inputs = Input(self.input_shape)
+        x = self._conv_block(32, kernel=(3,2), strides=(2,2))(inputs)
+        x = self._inverted_res_block(16, strides=(1,1), expansion=1, block_id=0)(x)
+
+        # x = self._inverted_res_block(24, strides=(2,2), expansion=6, block_id=1)(x)
+        # x = self._inverted_res_block(24, strides=(1,1), expansion=6, block_id=2)(x)
+
+        x = self._inverted_res_block(32, strides=(2, 2), expansion=6, block_id=3)(x)
+        x = self._inverted_res_block(32, strides=(1, 1), expansion=6, block_id=4)(x)
+        x = self._inverted_res_block(32, strides=(1, 1), expansion=6, block_id=5)(x)
+
+        x = self._inverted_res_block(64, strides=(2, 2), expansion=6, block_id=6)(x)
+        x = self._inverted_res_block(64, strides=(1, 1), expansion=6, block_id=7)(x)
+        x = self._inverted_res_block(64, strides=(1, 1), expansion=6, block_id=8)(x)
+        x = self._inverted_res_block(64, strides=(1, 1), expansion=6, block_id=9)(x)
+
+        # x = self._inverted_res_block(96, strides=(2, 2), expansion=6, block_id=10)(x)
+        # x = self._inverted_res_block(96, strides=(1, 1), expansion=6, block_id=11)(x)
+        # x = self._inverted_res_block(96, strides=(1, 1), expansion=6, block_id=12)(x)
+        #
+        # x = self._inverted_res_block(160, strides=(2, 2), expansion=6, block_id=13)(x)
+        # x = self._inverted_res_block(160, strides=(1, 1), expansion=6, block_id=14)(x)
+        # x = self._inverted_res_block(160, strides=(1, 1), expansion=6, block_id=15)(x)
+
+        x = self._inverted_res_block(96, strides=(1, 1), expansion=6, block_id=16)(x)
+
+        x = Conv2D(1280,kernel_size=(1,1),use_bias=False,name='Conv_1')(x)
+        x = BatchNormalization(epsilon=1e-3,
+                                      momentum=0.999,
+                                      name='Conv_1_bn')(x)
+        x = Activation(self.relu6, name='out_relu')(x)
+
+        x = GlobalAvgPool2D()(x)
+        x = Dense(self.classes, activation='softmax',use_bias=True, name='Logits')(x)
+
+        model = Model(inputs, x, name='mobilenetv2_%0.2f_%s' % (self.alpha, self.rows))
+        return model
+
     def build_net(self):
 
         inputs = Input(self.input_shape)
