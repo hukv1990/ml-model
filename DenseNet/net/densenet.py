@@ -179,7 +179,7 @@ def DenseNet(blocks,
                            name='bn')(x)
 
     x = GlobalAveragePooling2D(name='avg_pool')(x)
-    x = Dense(classes, activation='softmax', name='fc1000')(x)
+    x = Dense(classes, activation='softmax', name='fc')(x)
 
     model = Model(inputs, x, name='densenet')
 
@@ -243,12 +243,12 @@ def DenseNetBC(blocks,
     bn_axis = 3 if K.image_data_format() == 'channels_last' else 1
 
     # x = ZeroPadding2D(padding=((3, 3), (3, 3)))(inputs)
-    x = Conv2D(16, 3, strides=1, use_bias=False, padding='same',name='conv1/conv')(inputs)
+    x = Conv2D(16, 7, strides=2, use_bias=False, padding='same',name='conv1/conv')(inputs)
     x = BatchNormalization(axis=bn_axis, epsilon=1.001e-5,
                            name='conv1/bn')(x)
     x = Activation('relu', name='conv1/relu')(x)
-    # x = ZeroPadding2D(padding=((1, 1), (1, 1)))(x)
-    # x = MaxPooling2D(3, strides=2, name='pool1')(x)
+    x = ZeroPadding2D(padding=((1, 1), (1, 1)))(x)
+    x = MaxPooling2D(3, strides=2, name='pool1')(x)
 
     x = dense_block(x, blocks[0], name='conv2', bottle_neck=False)
     x = transition_block(x, 0.5, name='pool2')
