@@ -3,9 +3,6 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import sys
-sys.path.append(r'D:\ml\datasets')
-
 import tensorflow as tf
 from base_net import BaseNet
 from tensorflow.examples.tutorials.mnist import  input_data
