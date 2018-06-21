@@ -4,8 +4,7 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import tensorflow as tf
-from base_net import BaseNet
-from tensorflow.examples.tutorials.mnist import  input_data
+from net.base_net import BaseNet
 
 class LeNet(BaseNet):
     def __init__(self, batch_size):
@@ -17,9 +16,6 @@ class LeNet(BaseNet):
         self.initial_learning_rate = 0.01
         self.learning_rate_decay_ractor = 0.6
         self.moving_avg_decay = 0.99
-
-        tf.logging.set_verbosity(tf.logging.ERROR)
-        self.dataset = input_data.read_data_sets(r'D:\ml\datasets\mnist', one_hot=True)
 
     def inputs(self, training=True):
         with tf.variable_scope('inputs'):

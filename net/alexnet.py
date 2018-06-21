@@ -10,8 +10,8 @@ import tensorflow.contrib.slim as slim
 import sys
 sys.path.append(r'D:\ml\dataset_inf')
 
-from base_net import BaseNet
-from cifar10 import Cifar10
+from net.base_net import BaseNet
+from dataset_inf.cifar10 import Cifar10
 
 class AlexNet(BaseNet):
     def __init__(self, batch_size, num_classes):
@@ -29,10 +29,10 @@ class AlexNet(BaseNet):
 
         self.dataset_train = Cifar10(batch_size,
                                      training=True,
-                                     path=r'D:\ml\datasets\cifar-10-batches-bin')
+                                     path=r'D:\deep_learning\datasets\cifar-10-batches-bin')
         self.dataset_valid = Cifar10(10000,
                                      training=False,
-                                     path=r'D:\ml\datasets\cifar-10-batches-bin')
+                                     path=r'D:\deep_learning\datasets\cifar-10-batches-bin')
         self.is_training = tf.placeholder(tf.bool, shape=[], name='is_training')
 
     def inputs(self):

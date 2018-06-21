@@ -4,19 +4,17 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import sys
-sys.path.append('../net')
-sys.path.append('../dataset_inf')
 
 import tensorflow as tf
-import numpy as np
-from alexnet import AlexNet
+from net.alexnet import AlexNet
+from tensorflow.python.client import timeline
 
 class AlexNetCifar10(object):
     def __init__(self, batch_size = 128,
                  num_classes = 10,
-                 model_path='./model/alexnet_cifar10.ckpt',
-                 train_log_dir = './logs/train',
-                 valid_log_dir='./logs/valid'):
+                 model_path='./model/AlexNet/alexnet_cifar10.ckpt',
+                 train_log_dir = './logs/AlexNet/train',
+                 valid_log_dir='./logs/AlexNet/valid'):
         self.model_path = model_path
         self.train_log_dir = train_log_dir
         self.valid_log_dir = valid_log_dir
@@ -47,8 +45,14 @@ class AlexNetCifar10(object):
                 sess.run(init_op)
                 writer_train.add_graph(sess.graph)
 
+                # run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                # run_metadata = tf.RunMetadata()
+
                 for step in range(num_epochs):
-                    _ = sess.run([train_op], feed_dict={net.is_training: True})
+                    _ = sess.run([train_op],
+                                 feed_dict={net.is_training: True},
+                                 options=run_options,
+                                 run_metadata=run_metadata)
 
                     if step % 100 == 0:
                         loss_train, acc_train, summary_train \
@@ -63,6 +67,12 @@ class AlexNetCifar10(object):
                         print(format_str.format(step, loss_train, acc_train, loss_valid, acc_valid))
 
                         saver.save(sess, self.model_path, global_step=global_step)
+
+                    # tl = timeline.Timeline(run_metadata.step_stats)
+                    # ctf = tl.generate_chrome_trace_format()
+                    # with open('timeline.json', 'w') as f:
+                    #     f.write(ctf)
+
             writer_train.close()
             writer_valid.close()
 

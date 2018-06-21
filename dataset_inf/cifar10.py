@@ -14,7 +14,7 @@ class Cifar10(object):
 
         self.num_per_epoches_for_train = 50000
         self.num_per_epoches_for_test = 10000
-        self.num_parallel_calls = 16
+        self.num_parallel_calls = 8
         self.num_classes = 10
 
         self.training = training

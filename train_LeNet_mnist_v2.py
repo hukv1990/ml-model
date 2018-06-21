@@ -4,17 +4,21 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import sys
-sys.path.append(r'../net')
 
 import tensorflow as tf
 import numpy as np
 import time
 
-from lenet import LeNet
+from net.lenet import LeNet
+from tensorflow.examples.tutorials.mnist import  input_data
 
-MODEL_PATH = './model/lenet_mnist.ckpt'
-TRAIN_LOG_DIR = './logs/train'
-VALID_LOG_DIR = './logs/valid'
+MODEL_PATH = './model/LeNet/lenet_mnist.ckpt'
+TRAIN_LOG_DIR = './logs/LeNet/train'
+VALID_LOG_DIR = './logs/LeNet/valid'
+
+tf.logging.set_verbosity(tf.logging.ERROR)
+
+dataset = input_data.read_data_sets(r'D:\ml\datasets\mnist', one_hot=True)
 
 def train(num_epochs=10000):
     with tf.Graph().as_default():
@@ -33,8 +37,8 @@ def train(num_epochs=10000):
         init_op = tf.global_variables_initializer()
         merged = tf.summary.merge_all()
 
-        test_images = net.dataset.test.images
-        test_labels = net.dataset.test.labels
+        test_images = dataset.test.images
+        test_labels = dataset.test.labels
         test_images = np.reshape(test_images, [-1, 28, 28, 1])
         feed_dict_valid = {images : test_images,
                            labels : test_labels,
@@ -45,7 +49,7 @@ def train(num_epochs=10000):
             sess.run(init_op)
 
             for step in range(num_epochs):
-                x_train, y_train = net.dataset.train.next_batch(net.batch_size)
+                x_train, y_train = dataset.train.next_batch(net.batch_size)
                 x_train = np.reshape(x_train, [-1, 28, 28, 1])
                 feed_dict = {images: x_train, labels: y_train, training: True}
 
